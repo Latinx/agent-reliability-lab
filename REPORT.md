@@ -104,10 +104,13 @@ a disposable sandbox. See CONTRACT.md for request deadlines, exit codes, reset/c
 
 ## Exact source identities (SHA-256)
 
-No release commit is claimed. Content hashes identify this uncommitted snapshot, including adapter
-implementation and configuration. Retained `evidence/*.json` contains complete operation traces and
-all pins. Versions: checker **0.1.0**, adapter contract **1.0**. Hashes were checked before and after
-target execution; they pin local files, not remote services or undeclared dependencies.
+The published source is <https://github.com/Latinx/agent-reliability-lab>; `v0.1.0` points to
+`a9ef410` following the publication-path scrub. The hashes below identify the original tested
+checker, adapter implementation and configuration; subsequent publication edits changed evidence
+target-path labels and report prose, not those tested components. Retained `evidence/*.json`
+contains the operation traces and pins. Checker **0.1.0**, adapter contract **1.0**. Hashes were
+checked before and after target execution; they pin local files, not remote services or
+undeclared dependencies.
 
 | Component | SHA-256 |
 |---|---|
@@ -126,6 +129,7 @@ target execution; they pin local files, not remote services or undeclared depend
 The initial implementation and recorded checks were completed in this working session, without
 expanding to a framework integration. The budget remains three working days / 24 hands-on hours;
 no comprehensive time ledger was kept, so no exact hours-used claim is made. The user-reported
-cold run closes local execution verification. Next: commit, publish a remote, then verify clean
-clone-to-run before expanding the sample. A null result is publishable; the outstanding distribution
-check is disclosed above and is not itself a reliability null result.
+clean clone closes distribution verification. The next work is the service page, scorecard and
+prospect list, not expansion of the sample or implementation of the v2 guardrail candidate.
+MIT licensing was added locally after publication; this is an unreleased change intended for a
+future `v0.1.1`, not a claim that a new release exists. The `v0.1.0` tag is not moved.

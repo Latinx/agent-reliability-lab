@@ -28,3 +28,8 @@ Exit 0 = held under tested conditions; 1 = reproduced failure; 2 = inconclusive/
 [REPORT.md](REPORT.md) contains measured outcomes, exact source pins, method limits and a
 falsifier. No failure reproduced does not mean no bugs. Never use this tool's result as a
 production reliability certification. See contract limits before interpreting results.
+
+## License
+
+[MIT](LICENSE). The license addition is a local, unreleased change after `v0.1.0`;
+it does not move that tag or change the checker/adapter versions.
