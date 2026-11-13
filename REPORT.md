@@ -29,7 +29,7 @@ The local execution half of the stranger criterion is closed on that evidence; t
 not rerun by the assistant. **Published** at <https://github.com/Latinx/agent-reliability-lab>, and then re-verified from a
 clean clone of the first published revision (`a6c9854`): clone 501 ms; `./check sample` exit 0
 (three held, 259 ms); `./check reference` exit 1 (three reproduced, 227 ms);
-`python3 -m unittest discover -s tests` exit 0 (5/5, 1003 ms); no `/home/foe` path in the
+`python3 -m unittest discover -s tests` exit 0 (5/5, 1003 ms); no author home-directory path in the
 published tree. The full clone-to-run criterion is **closed**.
 
 Recorded environment: Python 3.13.5, Linux 6.18.58.1-microsoft-standard-WSL2.
