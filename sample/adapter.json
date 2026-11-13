@@ -1,0 +1,11 @@
+{
+  "contract": "1.0",
+  "mode": "command",
+  "command": ["{python}", "worker.py", "{state}"],
+  "sources": ["worker.py", "adapter.json"],
+  "expected_effects": {
+    "silent-stall": "check held under tested conditions",
+    "retry-ceiling": "check held under tested conditions",
+    "restart-duplicate": "check held under tested conditions"
+  }
+}

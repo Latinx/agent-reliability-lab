@@ -1,0 +1,454 @@
+{
+  "checker_version": "0.1.0",
+  "checker_sources_sha256": {
+    "check": "da8c891e2da22a7c5e3300076319238114fad6883a179693b8775a435fc5f965",
+    "model.py": "50aba3466056262dcc65637e85d9eb09e0a17408d299740cf3d258da35cec7c2",
+    "CONTRACT.md": "8a86f5351b370cf9f6380949a174627db9b28b492ddfb35298b952c133e65f32"
+  },
+  "adapter_contract": "1.0",
+  "config_sha256": "30b4a69b58109822224cc95766bad7c8b69532ba611f7d066833b41a331b2e3e",
+  "target_sources_sha256": {
+    "adapter.json": "30b4a69b58109822224cc95766bad7c8b69532ba611f7d066833b41a331b2e3e",
+    "../model.py": "50aba3466056262dcc65637e85d9eb09e0a17408d299740cf3d258da35cec7c2"
+  },
+  "target": "reference/adapter.json",
+  "mode": "model",
+  "results": [
+    {
+      "check": "silent-stall",
+      "outcome": "failure reproduced",
+      "evidence": {
+        "deadline_seconds": 0.1,
+        "observed_after_seconds": 0.15053242699650582,
+        "progress_before": 1,
+        "progress_after": 1,
+        "monitor_healthy": true,
+        "process_alive": true
+      },
+      "trace": [
+        {
+          "request": {
+            "contract": "1.0",
+            "op": "hello"
+          },
+          "response": {
+            "contract": "1.0",
+            "capabilities": [
+              "reset",
+              "work",
+              "stall",
+              "observe",
+              "attempt",
+              "deliver"
+            ]
+          }
+        },
+        {
+          "request": {
+            "contract": "1.0",
+            "op": "reset"
+          },
+          "response": {
+            "contract": "1.0"
+          }
+        },
+        {
+          "request": {
+            "contract": "1.0",
+            "op": "work"
+          },
+          "response": {
+            "contract": "1.0"
+          }
+        },
+        {
+          "request": {
+            "contract": "1.0",
+            "op": "observe"
+          },
+          "response": {
+            "contract": "1.0",
+            "progress": 1,
+            "healthy": true,
+            "charges": [],
+            "effects": [],
+            "checkpointed": false
+          }
+        },
+        {
+          "request": {
+            "contract": "1.0",
+            "op": "stall"
+          },
+          "response": {
+            "contract": "1.0"
+          }
+        },
+        {
+          "request": {
+            "contract": "1.0",
+            "op": "observe"
+          },
+          "response": {
+            "contract": "1.0",
+            "progress": 1,
+            "healthy": true,
+            "charges": [],
+            "effects": [],
+            "checkpointed": false
+          }
+        }
+      ]
+    },
+    {
+      "check": "retry-ceiling",
+      "outcome": "failure reproduced",
+      "evidence": {
+        "run_cap": 2,
+        "day_cap": 3,
+        "charges_by_run": {
+          "first": 5,
+          "second": 5
+        },
+        "total_cost_units": 10,
+        "attempts_requested": 10
+      },
+      "trace": [
+        {
+          "request": {
+            "contract": "1.0",
+            "op": "hello"
+          },
+          "response": {
+            "contract": "1.0",
+            "capabilities": [
+              "reset",
+              "work",
+              "stall",
+              "observe",
+              "attempt",
+              "deliver"
+            ]
+          }
+        },
+        {
+          "request": {
+            "contract": "1.0",
+            "op": "reset"
+          },
+          "response": {
+            "contract": "1.0"
+          }
+        },
+        {
+          "request": {
+            "contract": "1.0",
+            "op": "attempt",
+            "run": "first",
+            "cost": 1,
+            "run_cap": 2,
+            "day_cap": 3,
+            "transient_failure": true
+          },
+          "response": {
+            "contract": "1.0"
+          }
+        },
+        {
+          "request": {
+            "contract": "1.0",
+            "op": "attempt",
+            "run": "first",
+            "cost": 1,
+            "run_cap": 2,
+            "day_cap": 3,
+            "transient_failure": true
+          },
+          "response": {
+            "contract": "1.0"
+          }
+        },
+        {
+          "request": {
+            "contract": "1.0",
+            "op": "attempt",
+            "run": "first",
+            "cost": 1,
+            "run_cap": 2,
+            "day_cap": 3,
+            "transient_failure": true
+          },
+          "response": {
+            "contract": "1.0"
+          }
+        },
+        {
+          "request": {
+            "contract": "1.0",
+            "op": "attempt",
+            "run": "first",
+            "cost": 1,
+            "run_cap": 2,
+            "day_cap": 3,
+            "transient_failure": true
+          },
+          "response": {
+            "contract": "1.0"
+          }
+        },
+        {
+          "request": {
+            "contract": "1.0",
+            "op": "attempt",
+            "run": "first",
+            "cost": 1,
+            "run_cap": 2,
+            "day_cap": 3,
+            "transient_failure": true
+          },
+          "response": {
+            "contract": "1.0"
+          }
+        },
+        {
+          "request": {
+            "contract": "1.0",
+            "op": "attempt",
+            "run": "second",
+            "cost": 1,
+            "run_cap": 2,
+            "day_cap": 3,
+            "transient_failure": true
+          },
+          "response": {
+            "contract": "1.0"
+          }
+        },
+        {
+          "request": {
+            "contract": "1.0",
+            "op": "attempt",
+            "run": "second",
+            "cost": 1,
+            "run_cap": 2,
+            "day_cap": 3,
+            "transient_failure": true
+          },
+          "response": {
+            "contract": "1.0"
+          }
+        },
+        {
+          "request": {
+            "contract": "1.0",
+            "op": "attempt",
+            "run": "second",
+            "cost": 1,
+            "run_cap": 2,
+            "day_cap": 3,
+            "transient_failure": true
+          },
+          "response": {
+            "contract": "1.0"
+          }
+        },
+        {
+          "request": {
+            "contract": "1.0",
+            "op": "attempt",
+            "run": "second",
+            "cost": 1,
+            "run_cap": 2,
+            "day_cap": 3,
+            "transient_failure": true
+          },
+          "response": {
+            "contract": "1.0"
+          }
+        },
+        {
+          "request": {
+            "contract": "1.0",
+            "op": "attempt",
+            "run": "second",
+            "cost": 1,
+            "run_cap": 2,
+            "day_cap": 3,
+            "transient_failure": true
+          },
+          "response": {
+            "contract": "1.0"
+          }
+        },
+        {
+          "request": {
+            "contract": "1.0",
+            "op": "observe"
+          },
+          "response": {
+            "contract": "1.0",
+            "progress": 0,
+            "healthy": true,
+            "charges": [
+              {
+                "run": "first",
+                "cost": 1
+              },
+              {
+                "run": "first",
+                "cost": 1
+              },
+              {
+                "run": "first",
+                "cost": 1
+              },
+              {
+                "run": "first",
+                "cost": 1
+              },
+              {
+                "run": "first",
+                "cost": 1
+              },
+              {
+                "run": "second",
+                "cost": 1
+              },
+              {
+                "run": "second",
+                "cost": 1
+              },
+              {
+                "run": "second",
+                "cost": 1
+              },
+              {
+                "run": "second",
+                "cost": 1
+              },
+              {
+                "run": "second",
+                "cost": 1
+              }
+            ],
+            "effects": [],
+            "checkpointed": false
+          }
+        }
+      ]
+    },
+    {
+      "check": "restart-duplicate",
+      "outcome": "failure reproduced",
+      "evidence": {
+        "effects_before_restart": [
+          "order-1"
+        ],
+        "effects_after_replay": [
+          "order-1",
+          "order-1"
+        ]
+      },
+      "trace": [
+        {
+          "request": {
+            "contract": "1.0",
+            "op": "hello"
+          },
+          "response": {
+            "contract": "1.0",
+            "capabilities": [
+              "reset",
+              "work",
+              "stall",
+              "observe",
+              "attempt",
+              "deliver"
+            ]
+          }
+        },
+        {
+          "request": {
+            "contract": "1.0",
+            "op": "reset"
+          },
+          "response": {
+            "contract": "1.0"
+          }
+        },
+        {
+          "request": {
+            "contract": "1.0",
+            "op": "deliver",
+            "task": "order-1",
+            "before_checkpoint": true
+          },
+          "response": {
+            "contract": "1.0"
+          }
+        },
+        {
+          "request": {
+            "contract": "1.0",
+            "op": "observe"
+          },
+          "response": {
+            "contract": "1.0",
+            "progress": 0,
+            "healthy": true,
+            "charges": [],
+            "effects": [
+              "order-1"
+            ],
+            "checkpointed": false
+          }
+        },
+        {
+          "request": {
+            "contract": "1.0",
+            "op": "hello"
+          },
+          "response": {
+            "contract": "1.0",
+            "capabilities": [
+              "reset",
+              "work",
+              "stall",
+              "observe",
+              "attempt",
+              "deliver"
+            ]
+          }
+        },
+        {
+          "request": {
+            "contract": "1.0",
+            "op": "deliver",
+            "task": "order-1",
+            "before_checkpoint": false
+          },
+          "response": {
+            "contract": "1.0"
+          }
+        },
+        {
+          "request": {
+            "contract": "1.0",
+            "op": "observe"
+          },
+          "response": {
+            "contract": "1.0",
+            "progress": 0,
+            "healthy": true,
+            "charges": [],
+            "effects": [
+              "order-1",
+              "order-1"
+            ],
+            "checkpointed": true
+          }
+        }
+      ]
+    }
+  ]
+}

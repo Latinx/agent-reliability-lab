@@ -1,0 +1,18 @@
+{
+  "contract": "1.0",
+  "mode": "model",
+  "sources": ["adapter.json", "../model.py"],
+  "expected_effects": {
+    "silent-stall": "failure reproduced",
+    "retry-ceiling": "failure reproduced",
+    "restart-duplicate": "failure reproduced"
+  },
+  "steps": {
+    "reset": [{"action": "reset"}],
+    "work": [{"action": "progress"}],
+    "stall": [{"action": "stall"}],
+    "observe": [{"action": "snapshot"}],
+    "attempt": [{"action": "charge"}],
+    "deliver": [{"action": "effect"}, {"action": "checkpoint"}]
+  }
+}

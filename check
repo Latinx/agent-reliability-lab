@@ -1,0 +1,214 @@
+#!/usr/bin/env python3
+"""Portable, bounded reliability experiments; Python standard library only."""
+import argparse
+import hashlib
+import json
+import math
+import os
+from pathlib import Path
+import selectors
+import signal
+import subprocess
+import sys
+import tempfile
+import time
+
+VERSION = '0.1.0'
+CONTRACT = '1.0'
+NAMES = ('silent-stall', 'retry-ceiling', 'restart-duplicate')
+
+
+def digest(path):
+    return hashlib.sha256(Path(path).read_bytes()).hexdigest()
+
+
+class Adapter:
+    def __init__(self, config, root, state):
+        self.config, self.root, self.state = config, root, state
+        self.process = None
+        self.trace = []
+
+    def start(self):
+        command = [s.replace('{python}', sys.executable).replace('{state}', self.state)
+                   for s in self.config['command']]
+        self.errors = tempfile.TemporaryFile()
+        self.process = subprocess.Popen(command, cwd=self.root, stdin=subprocess.PIPE,
+                                        stdout=subprocess.PIPE, stderr=self.errors,
+                                        start_new_session=True)
+        self.buffer = b''
+
+    def stop(self):
+        if self.process:
+            try:
+                os.killpg(self.process.pid, signal.SIGKILL)
+            except ProcessLookupError:
+                pass
+            self.process.wait()
+            self.process.stdin.close()
+            self.process.stdout.close()
+            self.errors.close()
+            self.process = None
+
+    def call(self, op, **kwargs):
+        request = {'contract': CONTRACT, 'op': op, **kwargs}
+        self.process.stdin.write((json.dumps(request) + '\n').encode())
+        self.process.stdin.flush()
+        deadline = time.monotonic() + 3
+        with selectors.DefaultSelector() as selector:
+            selector.register(self.process.stdout, selectors.EVENT_READ)
+            while b'\n' not in self.buffer:
+                remaining = deadline - time.monotonic()
+                if remaining <= 0 or not selector.select(remaining):
+                    raise ValueError('adapter response timed out')
+                chunk = os.read(self.process.stdout.fileno(), 4096)
+                if not chunk:
+                    raise ValueError('adapter exited without a response')
+                self.buffer += chunk
+                if len(self.buffer) > 1048576:
+                    raise ValueError('adapter response exceeds 1 MiB')
+        line, self.buffer = self.buffer.split(b'\n', 1)
+        result = json.loads(line)
+        self.trace.append({'request': request, 'response': result})
+        if not isinstance(result, dict):
+            raise ValueError('adapter response must be a JSON object')
+        if result.get('unsupported'):
+            raise ValueError('unsupported operation: ' + op)
+        if result.get('contract') != CONTRACT:
+            raise ValueError('adapter contract mismatch')
+        return result
+
+
+def number(obj, key):
+    value = obj[key]
+    if type(value) not in (int, float) or not math.isfinite(value) or value < 0:
+        raise ValueError('invalid nonnegative number: ' + key)
+    return value
+
+
+def experiment(adapter, name):
+    adapter.start()
+    hello = adapter.call('hello')
+    if not all(op in hello.get('capabilities', []) for op in {
+            'silent-stall': ['reset', 'work', 'stall', 'observe'],
+            'retry-ceiling': ['reset', 'attempt', 'observe'],
+            'restart-duplicate': ['reset', 'deliver', 'observe']}[name]):
+        raise ValueError('missing required capabilities')
+    adapter.call('reset')
+    if name == 'silent-stall':
+        adapter.call('work')
+        before = adapter.call('observe')
+        progress = number(before, 'progress')
+        if progress == 0 or before['healthy'] is not True:
+            raise ValueError('healthy progressing baseline not established')
+        adapter.call('stall')
+        started = time.monotonic()
+        time.sleep(0.15)
+        after = adapter.call('observe')
+        elapsed = time.monotonic() - started
+        if adapter.process.poll() is not None or number(after, 'progress') != progress:
+            raise ValueError('live stalled-process precondition not established')
+        if type(after['healthy']) is not bool:
+            raise ValueError('health must be boolean')
+        failed = after['healthy']
+        detail = {'deadline_seconds': 0.1, 'observed_after_seconds': elapsed,
+                  'progress_before': progress, 'progress_after': after['progress'],
+                  'monitor_healthy': after['healthy'], 'process_alive': True}
+    elif name == 'retry-ceiling':
+        # Both caps are in integer synthetic cost units, not dollars or tokens.
+        for run in ('first', 'second'):
+            for _ in range(5):
+                adapter.call('attempt', run=run, cost=1, run_cap=2, day_cap=3,
+                             transient_failure=True)
+        after = adapter.call('observe')
+        charges = after['charges']
+        if not isinstance(charges, list) or not charges:
+            raise ValueError('no billable attempts observed; scenario not exercised')
+        totals = {'first': 0, 'second': 0}
+        for charge in charges:
+            totals[charge['run']] += number(charge, 'cost')
+        if totals['first'] == 0 or totals['second'] == 0:
+            raise ValueError('both run and daily scenarios must exercise billing')
+        failed = any(v > 2 for v in totals.values()) or sum(totals.values()) > 3
+        detail = {'run_cap': 2, 'day_cap': 3, 'charges_by_run': totals,
+                  'total_cost_units': sum(totals.values()), 'attempts_requested': 10}
+    else:
+        adapter.call('deliver', task='order-1', before_checkpoint=True)
+        before = adapter.call('observe')
+        if before['effects'] != ['order-1'] or before['checkpointed'] is not False:
+            raise ValueError('commit-before-checkpoint precondition not established')
+        adapter.stop()  # Actual process kill, then fresh launch against the same state directory.
+        adapter.start()
+        adapter.call('hello')
+        adapter.call('deliver', task='order-1', before_checkpoint=False)
+        after = adapter.call('observe')
+        if not isinstance(after['effects'], list) or 'order-1' not in after['effects']:
+            raise ValueError('effect evidence missing after restart')
+        failed = after['effects'].count('order-1') > 1
+        detail = {'effects_before_restart': before['effects'], 'effects_after_replay': after['effects']}
+    return {'check': name, 'outcome': 'failure reproduced' if failed else 'check held under tested conditions',
+            'evidence': detail}
+
+
+def main():
+    parser = argparse.ArgumentParser(description='Run three isolated agent reliability experiments. Config commands execute locally: review them first.')
+    parser.add_argument('target', help='config JSON or directory containing adapter.json')
+    parser.add_argument('--output', help='write machine-readable evidence JSON')
+    args = parser.parse_args()
+    path = Path(args.target).resolve()
+    if path.is_dir():
+        path /= 'adapter.json'
+    try:
+        config = json.loads(path.read_text())
+        if not isinstance(config, dict):
+            raise ValueError('config must be a JSON object')
+        if config['contract'] != CONTRACT:
+            raise ValueError('unsupported config contract')
+        mode = config['mode']
+        if mode not in ('command', 'model'):
+            raise ValueError('mode must be command or model')
+        if mode == 'model':
+            config['command'] = [sys.executable, str(Path(__file__).with_name('model.py')), str(path), '{state}']
+        if not isinstance(config['command'], list) or not config['command'] or not all(isinstance(x, str) for x in config['command']):
+            raise ValueError('command must be a nonempty array of strings')
+        sources = config['sources']
+        if not isinstance(sources, list) or not sources or not all(isinstance(x, str) for x in sources):
+            raise ValueError('sources must list target and adapter source files')
+        pins = {s: digest(path.parent / s) for s in sources}
+        checker_files = [Path(__file__), Path(__file__).with_name('model.py'),
+                         Path(__file__).with_name('CONTRACT.md')]
+        checker_hashes = {p.name: digest(p) for p in checker_files}
+        report = {'checker_version': VERSION, 'checker_sources_sha256': checker_hashes,
+                  'adapter_contract': CONTRACT, 'config_sha256': digest(path),
+                  'target_sources_sha256': pins, 'target': str(path), 'mode': mode,
+                  'results': []}
+        for name in NAMES:
+            with tempfile.TemporaryDirectory(prefix='agent-check-') as state:
+                adapter = Adapter(config, path.parent, state)
+                try:
+                    result = experiment(adapter, name)
+                except (ValueError, KeyError, TypeError, OSError, json.JSONDecodeError) as exc:
+                    result = {'check': name, 'outcome': 'inconclusive', 'reason': str(exc)}
+                finally:
+                    adapter.stop()
+                result['trace'] = adapter.trace
+                report['results'].append(result)
+        # Refuse reproducibility claims if sources changed during execution.
+        if (pins != {s: digest(path.parent / s) for s in sources}
+                or report['config_sha256'] != digest(path)
+                or checker_hashes != {p.name: digest(p) for p in checker_files}):
+            raise ValueError('target sources/config changed during execution')
+        text = json.dumps(report, indent=2)
+        if args.output:
+            Path(args.output).write_text(text + '\n')
+        for result in report['results']:
+            print(result['check'] + ': ' + result['outcome'])
+        print('Evidence: ' + (args.output or 'use --output FILE to retain full traces and pins'))
+        outcomes = [r['outcome'] for r in report['results']]
+        return 2 if 'inconclusive' in outcomes else (1 if 'failure reproduced' in outcomes else 0)
+    except (OSError, ValueError, KeyError, TypeError) as exc:
+        print('INCONCLUSIVE: ' + str(exc), file=sys.stderr)
+        return 2
+
+
+if __name__ == '__main__':
+    sys.exit(main())

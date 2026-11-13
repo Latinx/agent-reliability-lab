@@ -1,0 +1,4 @@
+__pycache__/
+*.py[cod]
+/sample-evidence.json
+/reference-evidence.json
